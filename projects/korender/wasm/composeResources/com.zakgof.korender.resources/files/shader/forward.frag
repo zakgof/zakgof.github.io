@@ -5,22 +5,31 @@ in vec3 vnormal;
 in vec2 vtex;
 
 uniform vec4 baseColor;
+uniform vec3 emissiveFactor;
 uniform float metallic;
 uniform float roughness;
+
 #ifdef SPECULAR_GLOSSINESS
-uniform vec4 specularFactor;
-uniform float glossinessFactor;
+    uniform vec3 specularFactor;
+    uniform float glossinessFactor;
 #endif
 
 #ifdef BASE_COLOR_MAP
 uniform sampler2D baseColorTexture;
 #endif
+
 #ifdef NORMAL_MAP
 uniform sampler2D normalTexture;
 #endif
+
+#ifdef EMISSIVE_MAP
+uniform sampler2D emissiveTexture;
+#endif
+
 #ifdef TRIPLANAR
 uniform float triplanarScale;
 #endif
+
 #ifdef DETAIL
 uniform sampler2D detailTexture;
 uniform float detailScale;
@@ -38,147 +47,137 @@ uniform sampler2D specularGlossinessTexture;
 
 uniform vec3 cameraPos;
 uniform vec3 cameraDir;
-uniform vec4 ambientColor;
+uniform vec3 ambientColor;
 uniform mat4 projection;
 uniform mat4 view;
 
 const int MAX_LIGHTS = 32;
 uniform int numDirectionalLights;
 uniform vec3 directionalLightDir[MAX_LIGHTS];
-uniform vec4 directionalLightColor[MAX_LIGHTS];
+uniform vec3 directionalLightColor[MAX_LIGHTS];
 uniform int directionalLightShadowTextureIndex[MAX_LIGHTS];
 uniform int directionalLightShadowTextureCount[MAX_LIGHTS];
 
 uniform int numPointLights;
 uniform vec3 pointLightPos[MAX_LIGHTS];
-uniform vec4 pointLightColor[MAX_LIGHTS];
+uniform vec3 pointLightColor[MAX_LIGHTS];
+uniform vec3 pointLightAttenuation[MAX_LIGHTS];
 
-const int MAX_SHADOWS = 12;
+const int MAX_SHADOWS = 8;
 uniform int numShadows;
 uniform sampler2D shadowTextures[MAX_SHADOWS];
 uniform mat4 bsps[MAX_SHADOWS];
 uniform vec4 cascade[MAX_SHADOWS];
+uniform float yMin[MAX_SHADOWS];
+uniform float yMax[MAX_SHADOWS];
+uniform int shadowMode[MAX_SHADOWS];
+uniform float f1[MAX_SHADOWS];
+uniform int i1[MAX_SHADOWS];
 
 out vec4 fragColor;
 
-#ifdef PLUGIN_TEXTURE
-#import "$texture"
+#ifdef PLUGIN_ALBEDO
+#import "$albedo"
+#endif
+
+#ifdef PLUGIN_EMISSION
+#import "$emission"
 #endif
 
 #import "!shader/lib/triplanar.glsl"
 #import "!shader/lib/normalmap.glsl"
 
-#import "!shader/lib/light.glsl"
-#import "!shader/lib/shading.glsl"
-#import "!shader/lib/pbr.glsl"
+float shadowRatios[MAX_SHADOWS];
 
-float sampleShadowTexture(int i, vec3 v) {
-    #ifdef WEBGL
-    float sh = 0.;
-    switch (i) {
-        case 0: sh = shadow(shadowTextures[0], v); break;
-        case 1: sh =  shadow(shadowTextures[1], v); break;
-        case 2: sh =  shadow(shadowTextures[2], v); break;
-        case 3: sh =  shadow(shadowTextures[3], v); break;
-        case 4: sh =  shadow(shadowTextures[4], v); break;
-        case 5: sh =  shadow(shadowTextures[5], v); break;
-        case 6: sh =  shadow(shadowTextures[6], v); break;
-        case 7: sh =  shadow(shadowTextures[7], v); break;
-        case 8: sh =  shadow(shadowTextures[8], v); break;
-        case 9: sh =  shadow(shadowTextures[9], v); break;
-        case 10: sh =  shadow(shadowTextures[10], v); break;
-        case 11: sh =  shadow(shadowTextures[11], v); break;
-    }
-    return sh;
-    #else
-    return varianceShadow(shadowTextures[i], v);
-    #endif
-}
+#import "!shader/lib/shadow.glsl"
+#import "!shader/lib/pbr.glsl"
+#import "!shader/lib/light.glsl"
 
 void main() {
 
-    #ifdef BASE_COLOR_MAP
+#ifdef BASE_COLOR_MAP
     #ifdef TRIPLANAR
-    vec4 albedo = triplanarBaseColor(vpos * triplanarScale, vnormal) * baseColor;
+    vec4 albedo = triplanar(baseColorTexture, vpos * triplanarScale, vnormal) * baseColor;
     #else
     vec4 albedo = texture(baseColorTexture, vtex) * baseColor;
     #endif
-    #else
+#else
     vec4 albedo = baseColor;
-    #endif
+#endif
 
-    #ifdef PLUGIN_TEXTURE
-    albedo = pluginTexture(albedo);
-    #endif
+#ifdef PLUGIN_ALBEDO
+    albedo = pluginAlbedo(albedo);
+#endif
 
-    #ifdef NORMAL_MAP
+#ifdef NORMAL_MAP
     vec3 N = getNormalFromMap(vnormal, vtex, vpos);
-    #else
+#else
     vec3 N = normalize(vnormal);
-    #endif
+#endif
 
-
-    #ifdef SPECULAR_GLOSSINESS
-    #ifdef SPECULAR_GLOSSINESS_MAP
-    vec4 sgtexel = textureRegOrTriplanar(specularGlossinessTexture, vtex, vpos, N);
-    vec3 specular = sgtexel.rgb * specularFactor.rgb;
-    float glossiness = sgtexel.a * glossinessFactor;
+#ifdef EMISSIVE_MAP
+    #ifdef TRIPLANAR
+    vec3 emission = triplanar(emissiveTexture, vpos * triplanarScale, vnormal).rgb * emissiveFactor;
     #else
-    vec3 specular = specularFactor.rgb;
-    float glossiness = glossinessFactor;
+    vec3 emission = texture(emissiveTexture, vtex).rgb * emissiveFactor;
+    #endif
+#else
+    vec3 emission = emissiveFactor;
+#endif
+
+#ifdef PLUGIN_EMISSION
+    emission = pluginEmission(emission);
+#endif
+
+#ifdef SPECULAR_GLOSSINESS
+    #ifdef SPECULAR_GLOSSINESS_MAP
+        #ifdef TRIPLANAR
+            vec4 sgtexel = triplanar(specularGlossinessTexture, vtex, vpos, N);
+        #else
+            vec4 sgtexel = texture(specularGlossinessTexture, vtex);
+        #endif
+        vec3 specular = sgtexel.rgb * specularFactor;
+        float glossiness = sgtexel.a * glossinessFactor;
+    #else
+        vec3 specular = specularFactor;
+        float glossiness = glossinessFactor;
     #endif
     vec3 c_diff = albedo.rgb * (1. - max(max(specular.r, specular.g), specular.b));
     vec3 F0 = specular;
     float rough = 1. - glossiness;
-    #else
+#else
     #ifdef METALLIC_ROUGHNESS_MAP
-    vec4 mrtexel = textureRegOrTriplanar(metallicRoughnessTexture, vtex, vpos, N);// TODO
-    float metal = mrtexel.b * metallic;
-    float rough = mrtexel.g * roughness;
+        #ifdef TRIPLANAR
+        vec4 mrtexel = triplanar(metallicRoughnessTexture, vtex, vpos, N);
+        #else
+        vec4 mrtexel = texture(metallicRoughnessTexture, vtex);
+        #endif
+        float metal = mrtexel.b * metallic;
+        float rough = mrtexel.g * roughness;
     #else
-    float metal = metallic;
-    float rough = roughness;
+        float metal = metallic;
+        float rough = roughness;
     #endif
     vec3 c_diff = mix(albedo.rgb, vec3(0.), metal);
     vec3 F0 = mix(vec3(0.04), albedo.rgb, metal);
-    #endif
+#endif
 
     ///////////////////////
 
     vec3 V = normalize(cameraPos - vpos);
 
-    vec3 color = c_diff * ambientColor.rgb;
+    vec3 color = c_diff * ambientColor + emission;
 
     float plane = dot((vpos - cameraPos), cameraDir);
 
+    populateShadowRatios(plane, vpos);
+
     for (int l=0; l<numDirectionalLights; l++) {
-        float shadowRatio = 0.;
-        int shadowCount = directionalLightShadowTextureCount[l];
-        for (int c=0; c<shadowCount; c++) {
-            int idx = directionalLightShadowTextureIndex[l] + c;
-            vec3 vshadow = (bsps[idx] * vec4(vpos, 1.0)).xyz;
-            float sh = sampleShadowTexture(idx, vshadow);
-
-            vec4 ci = cascade[c];
-            float cascadeContribution = smoothstep(ci.r, ci.g, plane) * (1.0 - smoothstep(ci.b, ci.a, plane));
-            shadowRatio += sh * cascadeContribution;
-
-//            if (vshadow.z > 0.999)
-//                color += vec3(1.0, 0.0, 0.0);
-
-        }
-        vec3 lightValue = directionalLightColor[l].rgb * (1. - shadowRatio);
-        vec3 L = normalize(-directionalLightDir[l]);
-        color += calculatePBR(N, V, L, c_diff, F0, rough, lightValue);
+        color += dirLight(l, N, V, c_diff, F0, rough);
     }
     for (int l=0; l<numPointLights; l++) {
-        float shadowRatio = 0.;
-        vec3 ftol = pointLightPos[l] - vpos;
-        float distance = length(ftol);
-        float att = min(2.0, 20.0 / distance);
-        vec3 lightValue = pointLightColor[l].rgb * (1. - shadowRatio) * att;// TODO quadratic; configurable attenuation ratio
-        vec3 L = normalize(ftol);
-        color += calculatePBR(N, V, L, c_diff, F0, rough, lightValue);
+        color += pointLight(vpos, l, N, V, c_diff, F0, rough);
     }
+
     fragColor = vec4(color, albedo.a);
 }
