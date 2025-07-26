@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Asset management - Korender Wiki</title>
+    <title>Billboards - Korender Wiki</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Asset management";
-        var mkdocs_page_input_path = "assets.md";
+        var mkdocs_page_name = "Billboards";
+        var mkdocs_page_input_path = "billboards.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -47,9 +47,7 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../context/">Contexts</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Asset management</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../assets/">Asset management</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../renderables/">Renderables</a>
                   </li>
@@ -71,7 +69,9 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../gui/">GUI</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../billboards/">Billboards</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Billboards</a>
+    <ul class="current">
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../instancing/">Instancing</a>
                   </li>
@@ -102,7 +102,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">User Guide</li>
-      <li class="breadcrumb-item active">Asset management</li>
+      <li class="breadcrumb-item active">Billboards</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -111,34 +111,56 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="asset-storage">Asset storage</h1>
-<p>Korender uses <a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-resources-usage.html">Kotlin Multiplatform resources</a> for storing assets, such as 3d model files and textures.</p>
-<p>To let Korender access your assets, provide <code>appResourceLoader</code> as a <code>Korender</code> composable function's arguments.</p>
-<pre><code class="language-kotlin">@Composable
-fun App() = Korender(appResourceLoader = { Res.readBytes(it) }) {
+                <h1 id="billboards">Billboards</h1>
+<p>A <em>billboard</em> or <em>impostor</em> is a flat 2D object (usually a textured quad) that always faces the camera, no matter where the camera moves. It's a common trick used to represent complex visuals with simple geometry.</p>
+<p>To render a billboard, add the <code>Billboard</code> functional declaration to your <code>Frame</code> context. Additionally, apply the <code>billboard</code> material to fine-tune:</p>
+<pre><code class="language-kotlin">Billboard (
+    base(colorTexture = texture(&quot;textures/sprite.png&quot;)),
+    billboard(
+        position = Vec3(3f, 5f, 7f),
+        scale = Vec2(2f, 2f),
+        rotation = 0.3f
+    ),
+    transparent = true
+)
 </code></pre>
-<p>In the above example, the texture asset is located in the file <code>commonMain/composeResources/files/texture/asphalt.jpg</code></p>
-<p>Korender also includes some bundled resources. To access them, start the path with an exclamation mark: <code>!font/anta.ttf</code></p>
-<h1 id="asset-loading-and-unloading">Asset loading and unloading</h1>
-<p>Korender loads an asset as soon as it's declared in a rendering frame. Asset unloading is managed by retention policy. The default policy is to automatically unload a resource after 10 seconds of not being used.    </p>
-<p>Retention policy can be overridden by setting the <code>retentionPolicy</code> var in the Korender context:</p>
-<pre><code class="language-kotlin">@Composable
-Korender(appResourceLoader = { Res.readBytes(it) }) {
-    retentionPolicy = keepForever()
-</code></pre>
-<h5 id="available-retention-policies">Available retention policies:</h5>
-<ul>
-<li><code>immediatelyFree()</code> - unload a resource immediately after it's not used in a frame.    </li>
-<li><code>keepForever()</code> - do not unload a resource, keep it forever.    </li>
-<li><code>time(seconds: Float)</code> - unload a resource after specified number of seconds of not being used.    </li>
-<li><code>untilGeneration(generation: Int)</code> - use generation-based retention: unload all unused resources which generation is less than the specified value; asset generation is specified by the value of the variable <code>retentionGeneration</code> at the moment of asset loading.    </li>
-</ul>
+<p><code>billboard</code> materials supports the following parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Uniform name</th>
+<th>Type</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>position</td>
+<td>Vec3</td>
+<td>(0, 0, 0)</td>
+<td>World position of billboard's center</td>
+</tr>
+<tr>
+<td>scale</td>
+<td>Vec2</td>
+<td>(1, 1)</td>
+<td>Billboard's size (horizontal/vertical)</td>
+</tr>
+<tr>
+<td>rotation</td>
+<td>Float</td>
+<td>0.0f</td>
+<td>Rotation (in radians)</td>
+</tr>
+</tbody>
+</table>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../context/" class="btn btn-neutral float-left" title="Contexts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../renderables/" class="btn btn-neutral float-right" title="Renderables">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../gui/" class="btn btn-neutral float-left" title="GUI"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../instancing/" class="btn btn-neutral float-right" title="Instancing">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -161,10 +183,10 @@ Korender(appResourceLoader = { Res.readBytes(it) }) {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../context/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../gui/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../renderables/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../instancing/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

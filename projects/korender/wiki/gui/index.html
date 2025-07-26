@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Asset management - Korender Wiki</title>
+    <title>GUI - Korender Wiki</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Asset management";
-        var mkdocs_page_input_path = "assets.md";
+        var mkdocs_page_name = "GUI";
+        var mkdocs_page_input_path = "gui.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -47,9 +47,7 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../context/">Contexts</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Asset management</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../assets/">Asset management</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../renderables/">Renderables</a>
                   </li>
@@ -69,7 +67,17 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../effects/">Effects</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../gui/">GUI</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">GUI</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#containers-elements-and-fillers">Containers, Elements, and Fillers</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#element-parameters">Element parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#touch-handlers">Touch handlers</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../billboards/">Billboards</a>
                   </li>
@@ -102,7 +110,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">User Guide</li>
-      <li class="breadcrumb-item active">Asset management</li>
+      <li class="breadcrumb-item active">GUI</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -111,34 +119,61 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="asset-storage">Asset storage</h1>
-<p>Korender uses <a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-resources-usage.html">Kotlin Multiplatform resources</a> for storing assets, such as 3d model files and textures.</p>
-<p>To let Korender access your assets, provide <code>appResourceLoader</code> as a <code>Korender</code> composable function's arguments.</p>
-<pre><code class="language-kotlin">@Composable
-fun App() = Korender(appResourceLoader = { Res.readBytes(it) }) {
+                <h1 id="gui">GUI</h1>
+<p>Korender supports on-screen rendering of texts and images. They can react to touch events (mouse events on the desktop), so it's possible to create basic widgets.</p>
+<h2 id="containers-elements-and-fillers">Containers, Elements, and Fillers</h2>
+<p>Elements can be positioned on the rendering viewport using containers - stacks, columns, and rows - and fillers. A filler consumes the rest of the available horizontal space in a row, or vertical space in a column. If multiple fillers appear in a container, they share the available space equally.</p>
+<pre><code class="language-kotlin">Frame {
+    Gui {
+        Row {
+            Text(text = &quot;LEFT TOP&quot;, id = &quot;lt&quot;, fontResource = &quot;/ubuntu.ttf&quot;, height = 30, color = ColorRBGA(0xFFFF8888))
+            Filler
+            Text(text = &quot;RIGHT TOP&quot;, id = &quot;rt&quot;, fontResource = &quot;/ubuntu.ttf&quot;, height = 30, color = ColorRBGA(0xFFFF8888))
+        }
+        Filler
+        Row {
+            Filler
+            Image(imageResource = &quot;/bottom.png&quot;, width = 100, height = 100)
+            Filler
+        }
+    }
+}
 </code></pre>
-<p>In the above example, the texture asset is located in the file <code>commonMain/composeResources/files/texture/asphalt.jpg</code></p>
-<p>Korender also includes some bundled resources. To access them, start the path with an exclamation mark: <code>!font/anta.ttf</code></p>
-<h1 id="asset-loading-and-unloading">Asset loading and unloading</h1>
-<p>Korender loads an asset as soon as it's declared in a rendering frame. Asset unloading is managed by retention policy. The default policy is to automatically unload a resource after 10 seconds of not being used.    </p>
-<p>Retention policy can be overridden by setting the <code>retentionPolicy</code> var in the Korender context:</p>
-<pre><code class="language-kotlin">@Composable
-Korender(appResourceLoader = { Res.readBytes(it) }) {
-    retentionPolicy = keepForever()
-</code></pre>
-<h5 id="available-retention-policies">Available retention policies:</h5>
+<p>In the above example, the text "LEFT TOP" appears in the left top corner, and the text "RIGHT TOP" appears in the right top corner; at the bottom of the screen, the image "/bottom.png" from resources is rendered, centered horizontally.</p>
+<h3 id="element-parameters">Element parameters</h3>
+<p>Image:</p>
 <ul>
-<li><code>immediatelyFree()</code> - unload a resource immediately after it's not used in a frame.    </li>
-<li><code>keepForever()</code> - do not unload a resource, keep it forever.    </li>
-<li><code>time(seconds: Float)</code> - unload a resource after specified number of seconds of not being used.    </li>
-<li><code>untilGeneration(generation: Int)</code> - use generation-based retention: unload all unused resources which generation is less than the specified value; asset generation is specified by the value of the variable <code>retentionGeneration</code> at the moment of asset loading.    </li>
+<li><code>imageResource</code>: image file path</li>
+<li><code>width</code>: width in pixels</li>
+<li><code>height</code>: height in pixels</li>
+<li><code>onTouch</code>: touch event handler</li>
 </ul>
+<p>Text:</p>
+<ul>
+<li><code>text</code>: string to display (ASCII only)</li>
+<li><code>id</code>: object used for identification of the element in the tree, must be unique</li>
+<li><code>fontResource</code>: classpath of the ttf file</li>
+<li><code>color</code>: text color</li>
+<li><code>onTouch</code>: touch event handler</li>
+</ul>
+<h3 id="touch-handlers">Touch handlers</h3>
+<p>Touch handlers allow you to react to touch events occurring within the widget's screen rectangle. Touch event contains event type (<code>Up</code>, <code>Down</code> or <code>Move</code>) and event coordinates on screen.
+To handle click events, use the <code>onClick</code> helper:</p>
+<pre><code class="language-kotlin">Image(
+    ....
+    onTouch = {
+        onClick(it) {
+        // Handle click here 
+        }
+    }
+)
+</code></pre>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../context/" class="btn btn-neutral float-left" title="Contexts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../renderables/" class="btn btn-neutral float-right" title="Renderables">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../effects/" class="btn btn-neutral float-left" title="Effects"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../billboards/" class="btn btn-neutral float-right" title="Billboards">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -161,10 +196,10 @@ Korender(appResourceLoader = { Res.readBytes(it) }) {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../context/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../effects/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../renderables/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../billboards/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

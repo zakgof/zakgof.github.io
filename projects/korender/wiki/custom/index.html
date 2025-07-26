@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Asset management - Korender Wiki</title>
+    <title>Custom shaders - Korender Wiki</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Asset management";
-        var mkdocs_page_input_path = "assets.md";
+        var mkdocs_page_name = "Custom shaders";
+        var mkdocs_page_input_path = "custom.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -44,12 +44,10 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">User Guide</span></p>
-              <ul class="current">
+              <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../context/">Contexts</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Asset management</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../assets/">Asset management</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../renderables/">Renderables</a>
                   </li>
@@ -81,10 +79,12 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Extending Korender</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../plugins/">Plugins</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../custom/">Custom shaders</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Custom shaders</a>
+    <ul class="current">
+    </ul>
                   </li>
               </ul>
       </div>
@@ -101,8 +101,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">User Guide</li>
-      <li class="breadcrumb-item active">Asset management</li>
+          <li class="breadcrumb-item">Extending Korender</li>
+      <li class="breadcrumb-item active">Custom shaders</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -111,34 +111,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="asset-storage">Asset storage</h1>
-<p>Korender uses <a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-resources-usage.html">Kotlin Multiplatform resources</a> for storing assets, such as 3d model files and textures.</p>
-<p>To let Korender access your assets, provide <code>appResourceLoader</code> as a <code>Korender</code> composable function's arguments.</p>
-<pre><code class="language-kotlin">@Composable
-fun App() = Korender(appResourceLoader = { Res.readBytes(it) }) {
-</code></pre>
-<p>In the above example, the texture asset is located in the file <code>commonMain/composeResources/files/texture/asphalt.jpg</code></p>
-<p>Korender also includes some bundled resources. To access them, start the path with an exclamation mark: <code>!font/anta.ttf</code></p>
-<h1 id="asset-loading-and-unloading">Asset loading and unloading</h1>
-<p>Korender loads an asset as soon as it's declared in a rendering frame. Asset unloading is managed by retention policy. The default policy is to automatically unload a resource after 10 seconds of not being used.    </p>
-<p>Retention policy can be overridden by setting the <code>retentionPolicy</code> var in the Korender context:</p>
-<pre><code class="language-kotlin">@Composable
-Korender(appResourceLoader = { Res.readBytes(it) }) {
-    retentionPolicy = keepForever()
-</code></pre>
-<h5 id="available-retention-policies">Available retention policies:</h5>
-<ul>
-<li><code>immediatelyFree()</code> - unload a resource immediately after it's not used in a frame.    </li>
-<li><code>keepForever()</code> - do not unload a resource, keep it forever.    </li>
-<li><code>time(seconds: Float)</code> - unload a resource after specified number of seconds of not being used.    </li>
-<li><code>untilGeneration(generation: Int)</code> - use generation-based retention: unload all unused resources which generation is less than the specified value; asset generation is specified by the value of the variable <code>retentionGeneration</code> at the moment of asset loading.    </li>
-</ul>
+                <h1 id="custom-shaders">Custom shaders</h1>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../context/" class="btn btn-neutral float-left" title="Contexts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../renderables/" class="btn btn-neutral float-right" title="Renderables">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../plugins/" class="btn btn-neutral float-left" title="Plugins"><span class="icon icon-circle-arrow-left"></span> Previous</a>
     </div>
 
   <hr/>
@@ -161,10 +139,8 @@ Korender(appResourceLoader = { Res.readBytes(it) }) {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../context/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../plugins/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
-    
-      <span><a href="../renderables/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

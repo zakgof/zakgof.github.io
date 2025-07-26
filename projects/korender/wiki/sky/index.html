@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Asset management - Korender Wiki</title>
+    <title>Sky rendering - Korender Wiki</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Asset management";
-        var mkdocs_page_input_path = "assets.md";
+        var mkdocs_page_name = "Sky rendering";
+        var mkdocs_page_input_path = "sky.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -47,9 +47,7 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../context/">Contexts</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Asset management</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../assets/">Asset management</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../renderables/">Renderables</a>
                   </li>
@@ -61,7 +59,25 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../light/">Lights and shadows</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../sky/">Sky rendering</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Sky rendering</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#cubemap-sky">Cubemap sky</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#single-texture-sky">Single-texture sky</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#procedural-sky">Procedural sky</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#presets">Presets:</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#fastcloudsky">fastCloudSky</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#starrysky">starrySky</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../env/">Environment mapping</a>
                   </li>
@@ -102,7 +118,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">User Guide</li>
-      <li class="breadcrumb-item active">Asset management</li>
+      <li class="breadcrumb-item active">Sky rendering</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -111,34 +127,144 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="asset-storage">Asset storage</h1>
-<p>Korender uses <a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-resources-usage.html">Kotlin Multiplatform resources</a> for storing assets, such as 3d model files and textures.</p>
-<p>To let Korender access your assets, provide <code>appResourceLoader</code> as a <code>Korender</code> composable function's arguments.</p>
-<pre><code class="language-kotlin">@Composable
-fun App() = Korender(appResourceLoader = { Res.readBytes(it) }) {
+                <h1 id="sky-rendering">Sky rendering</h1>
+<p>Korender supports several ways to render sky:</p>
+<h2 id="cubemap-sky">Cubemap sky</h2>
+<p>Provide 6 textures to construct a skybox cube map:</p>
+<pre><code class="language-kotlin">Frame {
+    Sky(cubeSky(cubeTexture(&quot;sky&quot;, mapOf(
+        NX to &quot;textures/skybox-nx.jpg&quot;,
+        NY to &quot;textures/skybox-ny.jpg&quot;,
+        NZ to &quot;textures/skybox-nz.jpg&quot;,
+        PX to &quot;textures/skybox-px.jpg&quot;,
+        PY to &quot;textures/skybox-py.jpg&quot;,
+        PZ to &quot;textures/skybox-pz.jpg&quot;
+    ))))
 </code></pre>
-<p>In the above example, the texture asset is located in the file <code>commonMain/composeResources/files/texture/asphalt.jpg</code></p>
-<p>Korender also includes some bundled resources. To access them, start the path with an exclamation mark: <code>!font/anta.ttf</code></p>
-<h1 id="asset-loading-and-unloading">Asset loading and unloading</h1>
-<p>Korender loads an asset as soon as it's declared in a rendering frame. Asset unloading is managed by retention policy. The default policy is to automatically unload a resource after 10 seconds of not being used.    </p>
-<p>Retention policy can be overridden by setting the <code>retentionPolicy</code> var in the Korender context:</p>
-<pre><code class="language-kotlin">@Composable
-Korender(appResourceLoader = { Res.readBytes(it) }) {
-    retentionPolicy = keepForever()
+<h2 id="single-texture-sky">Single-texture sky</h2>
+<p>Supply a single texture that will be projected onto the sky dome, accounting for projection distortion</p>
+<pre><code class="language-kotlin">Frame {
+    Sky(textureSky(&quot;textures/sky.jpg&quot;))
 </code></pre>
-<h5 id="available-retention-policies">Available retention policies:</h5>
-<ul>
-<li><code>immediatelyFree()</code> - unload a resource immediately after it's not used in a frame.    </li>
-<li><code>keepForever()</code> - do not unload a resource, keep it forever.    </li>
-<li><code>time(seconds: Float)</code> - unload a resource after specified number of seconds of not being used.    </li>
-<li><code>untilGeneration(generation: Int)</code> - use generation-based retention: unload all unused resources which generation is less than the specified value; asset generation is specified by the value of the variable <code>retentionGeneration</code> at the moment of asset loading.    </li>
-</ul>
+<h2 id="procedural-sky">Procedural sky</h2>
+<p>Choose from several predefined parameterized procedural sky presets:</p>
+<pre><code class="language-kotlin">Frame {
+    Sky(fastCloudSky(thickness = 12.0f, rippleAmount = 0.4f))
+
+</code></pre>
+<h3 id="presets">Presets:</h3>
+<h4 id="fastcloudsky"><code>fastCloudSky</code></h4>
+<p>Procedural day sky with clouds, supported parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Uniform name</th>
+<th>Type</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>density</td>
+<td>Float</td>
+<td>3.0f</td>
+<td>Cloud density, 1-5</td>
+</tr>
+<tr>
+<td>thickness</td>
+<td>Float</td>
+<td>10.0f</td>
+<td>Cloud thickness, 0-20</td>
+</tr>
+<tr>
+<td>scale</td>
+<td>Float</td>
+<td>1.0f</td>
+<td>Cloud scale, 0.1-10</td>
+</tr>
+<tr>
+<td>rippleAmount</td>
+<td>Float</td>
+<td>0.3f</td>
+<td>Cloud high-frequency ripple amount, 0-1</td>
+</tr>
+<tr>
+<td>rippleScale</td>
+<td>Float</td>
+<td>4.0f</td>
+<td>Cloud ripple frequency multiplier, 1-10</td>
+</tr>
+<tr>
+<td>zenithColor</td>
+<td>Color</td>
+<td>Color(0x3F6FC3)</td>
+<td>Sky color at zenith</td>
+</tr>
+<tr>
+<td>horizonColor</td>
+<td>Color</td>
+<td>Color(0xB8CAE9)</td>
+<td>Sky color at horizon</td>
+</tr>
+<tr>
+<td>cloudLight</td>
+<td>Float</td>
+<td>1.0f</td>
+<td>Max lightness of clouds</td>
+</tr>
+<tr>
+<td>cloudDark</td>
+<td>Float</td>
+<td>0.7f</td>
+<td>Min lightness of clouds</td>
+</tr>
+</tbody>
+</table>
+<h4 id="starrysky"><code>starrySky</code></h4>
+<p>Procedural night sky with colorful stars:</p>
+<table>
+<thead>
+<tr>
+<th>Uniform name</th>
+<th>Type</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>colorness</td>
+<td>Float</td>
+<td>0.8f</td>
+<td>Star color intensity</td>
+</tr>
+<tr>
+<td>density</td>
+<td>Float</td>
+<td>20.0f</td>
+<td>Star density (amount)</td>
+</tr>
+<tr>
+<td>speed</td>
+<td>Float</td>
+<td>1.0f</td>
+<td>Star motion speed factor</td>
+</tr>
+<tr>
+<td>size</td>
+<td>Float</td>
+<td>15.0f</td>
+<td>Star radius factor</td>
+</tr>
+</tbody>
+</table>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../context/" class="btn btn-neutral float-left" title="Contexts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../renderables/" class="btn btn-neutral float-right" title="Renderables">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../light/" class="btn btn-neutral float-left" title="Lights and shadows"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../env/" class="btn btn-neutral float-right" title="Environment mapping">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -161,10 +287,10 @@ Korender(appResourceLoader = { Res.readBytes(it) }) {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../context/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../light/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../renderables/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../env/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

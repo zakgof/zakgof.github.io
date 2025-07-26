@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Asset management - Korender Wiki</title>
+    <title>Effects - Korender Wiki</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Asset management";
-        var mkdocs_page_input_path = "assets.md";
+        var mkdocs_page_name = "Effects";
+        var mkdocs_page_input_path = "effects.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -47,9 +47,7 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../context/">Contexts</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Asset management</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../assets/">Asset management</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../renderables/">Renderables</a>
                   </li>
@@ -67,7 +65,17 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../filters/">Post-process filters</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../effects/">Effects</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Effects</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#fire">Fire</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fireball">Fireball</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#smoke">Smoke</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#water">Water</a>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../gui/">GUI</a>
                   </li>
@@ -102,7 +110,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">User Guide</li>
-      <li class="breadcrumb-item active">Asset management</li>
+      <li class="breadcrumb-item active">Effects</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -111,34 +119,135 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="asset-storage">Asset storage</h1>
-<p>Korender uses <a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-resources-usage.html">Kotlin Multiplatform resources</a> for storing assets, such as 3d model files and textures.</p>
-<p>To let Korender access your assets, provide <code>appResourceLoader</code> as a <code>Korender</code> composable function's arguments.</p>
-<pre><code class="language-kotlin">@Composable
-fun App() = Korender(appResourceLoader = { Res.readBytes(it) }) {
+                <h1 id="effects">Effects</h1>
+<p>Korender includes a set of predefined effect shaders, accessible through special material modifiers.
+Each effect may expose adjustable parameters, which can be configured using effect-specific uniforms.</p>
+<h3 id="fire">Fire</h3>
+<p>Fire effect implements animated flames. Normally, it's used on a <code>Billboard</code> with transparency enabled:</p>
+<pre><code class="language-kotlin">Billboard(
+    billboard(scale = Vec2(2f, 10f)),
+    fire(strength = 4f),
+    transparent = true
+)
 </code></pre>
-<p>In the above example, the texture asset is located in the file <code>commonMain/composeResources/files/texture/asphalt.jpg</code></p>
-<p>Korender also includes some bundled resources. To access them, start the path with an exclamation mark: <code>!font/anta.ttf</code></p>
-<h1 id="asset-loading-and-unloading">Asset loading and unloading</h1>
-<p>Korender loads an asset as soon as it's declared in a rendering frame. Asset unloading is managed by retention policy. The default policy is to automatically unload a resource after 10 seconds of not being used.    </p>
-<p>Retention policy can be overridden by setting the <code>retentionPolicy</code> var in the Korender context:</p>
-<pre><code class="language-kotlin">@Composable
-Korender(appResourceLoader = { Res.readBytes(it) }) {
-    retentionPolicy = keepForever()
+<p>Fire effect parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Uniform name</th>
+<th>Type</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>strength</td>
+<td>Float</td>
+<td>3.0f</td>
+<td>Controls how rippled the flame appears, 1-5</td>
+</tr>
+</tbody>
+</table>
+<h3 id="fireball">Fireball</h3>
+<p>Fireball is a spherical fire-like effect that can be used for rendering explosions. Normally, it's used on a <code>Billboard</code> with transparency enabled:</p>
+<pre><code class="language-kotlin">Billboard(
+    billboard(scale = Vec2(radius * phase, radius * phase)),
+    fireball(power = phase),
+    transparent = true
+)
 </code></pre>
-<h5 id="available-retention-policies">Available retention policies:</h5>
-<ul>
-<li><code>immediatelyFree()</code> - unload a resource immediately after it's not used in a frame.    </li>
-<li><code>keepForever()</code> - do not unload a resource, keep it forever.    </li>
-<li><code>time(seconds: Float)</code> - unload a resource after specified number of seconds of not being used.    </li>
-<li><code>untilGeneration(generation: Int)</code> - use generation-based retention: unload all unused resources which generation is less than the specified value; asset generation is specified by the value of the variable <code>retentionGeneration</code> at the moment of asset loading.    </li>
-</ul>
+<p>Fireball effect parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Uniform name</th>
+<th>Type</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power</td>
+<td>Float</td>
+<td>0.5f</td>
+<td>Controls the fireball expansion: 0.0 for explosion initiation moment, 1.0 for the fully exploded fireball. Animate 0.0 to 1.0 for explosion effect</td>
+</tr>
+</tbody>
+</table>
+<h3 id="smoke">Smoke</h3>
+<p>Single spherical smoke particle effect. Normally, it's used on a batched <code>Billboard</code> with transparency enabled:</p>
+<p>Smoke effect parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Uniform name</th>
+<th>Type</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>density</td>
+<td>Float</td>
+<td>0.5f</td>
+<td>Smoke density, 0-1</td>
+</tr>
+<tr>
+<td>seed</td>
+<td>Float</td>
+<td>0.0f</td>
+<td>Randomness seed - provide unique values for uniquely looking smoke particles 0-1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="water">Water</h3>
+<p>Wavy water surface with sky reflections. Water is implemented as a post-process filter:</p>
+<pre><code class="language-kotlin">Frame{
+    ... // Render the scene
+    PostProcess(water(waveScale = 0.05f), fastCloudSky())
+}
+</code></pre>
+<p>Water parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Uniform name</th>
+<th>Type</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>waterColor</td>
+<td>ColorRGB</td>
+<td>ColorRGB(0x00182A)</td>
+<td>Water own color</td>
+</tr>
+<tr>
+<td>transparency</td>
+<td>Float</td>
+<td>0.1f</td>
+<td>Water transparency ratio</td>
+</tr>
+<tr>
+<td>waveScale</td>
+<td>Float</td>
+<td>0.04f</td>
+<td>Waves scale ratio</td>
+</tr>
+</tbody>
+</table>
+<p>Additionally, add any sky material modifier to provide sky reflections from the water</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../context/" class="btn btn-neutral float-left" title="Contexts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../renderables/" class="btn btn-neutral float-right" title="Renderables">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../filters/" class="btn btn-neutral float-left" title="Post-process filters"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../gui/" class="btn btn-neutral float-right" title="GUI">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -161,10 +270,10 @@ Korender(appResourceLoader = { Res.readBytes(it) }) {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../context/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../filters/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../renderables/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../gui/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
