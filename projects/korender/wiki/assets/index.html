@@ -107,6 +107,10 @@
 <p>To let Korender access your assets, provide <code>appResourceLoader</code> as a <code>Korender</code> composable function's arguments.</p>
 <pre><code class="language-kotlin">@Composable
 fun App() = Korender(appResourceLoader = { Res.readBytes(it) }) {
+        // ...
+        Frame {
+            Renderable(
+                base(colorTexture = texture(&quot;texture/asphalt.jpg&quot;)),
 </code></pre>
 <p>In the above example, the texture asset is located in the file <code>commonMain/composeResources/files/texture/asphalt.jpg</code></p>
 <p>Korender also includes some bundled resources. To access them, start the path with an exclamation mark: <code>!font/anta.ttf</code></p>
