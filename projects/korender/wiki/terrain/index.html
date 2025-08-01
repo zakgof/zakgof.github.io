@@ -113,7 +113,7 @@ Basically, Korender draws the terrain as the series of clipmap rings centered an
 Transitions between rings are smoothed using vertex morphing, which eliminates vertex popping during viewport moving.</p>
 <p>To render a terrain, first define terrain <em>prefab</em> in Korender context, then render the prefab in Frame context with <code>terrain</code> material modifier:</p>
 <pre><code class="language-kotlin">Korender {
-    val terrain = clipmapTerrainPrefab(&quot;terrain&quot;, 2.0f, 10, 6)
+    val terrain = clipmapTerrainPrefab(id = &quot;terrain&quot;, cellSize = 2.0f, hg = 10, rings = 6)
     ...
     Frame {
         Renderable(
@@ -128,18 +128,22 @@ Transitions between rings are smoothed using vertex morphing, which eliminates v
             prefab = terrain
         )
 </code></pre>
-<p>Prefab parameters:
-- <code>id</code> unique identifier
-- <code>cellSize</code> world space size of a terrain cell
-- <code>hg</code> parameter defining ring width: the higher the value, the more geometry details will be preserved while rendering
-- <code>rings</code> number of clipmap rings</p>
-<p>Material modifier parameters:
-- <code>heightTexture</code> heightmap defining height value at terrain point
-- <code>heightTextureSize</code> size of the heightmap in pixels
-- <code>heightScale</code> multiplier to pixel value defined by <code>heightTexture</code> (assuming the pixel value is 0..1)
-- <code>outsideHeight</code> height value outside the texture extents
-- <code>terrainCenter</code> world space point where the terrain center is to be placed</p>
-<p>The visible terrain extent from the viewpoint is roughly 2<em>hg</em>2^rings^ terrain cells</p>
+<p>Prefab parameters:</p>
+<ul>
+<li><code>id</code> unique identifier</li>
+<li><code>cellSize</code> world space size of a terrain cell</li>
+<li><code>hg</code> parameter defining ring width: the higher the value, the more geometry details will be preserved while rendering</li>
+<li><code>rings</code> number of clipmap rings</li>
+</ul>
+<p>Material modifier parameters:</p>
+<ul>
+<li><code>heightTexture</code> heightmap defining height value at terrain point</li>
+<li><code>heightTextureSize</code> size of the heightmap in pixels</li>
+<li><code>heightScale</code> multiplier to pixel value defined by <code>heightTexture</code> (assuming the pixel value is 0..1)</li>
+<li><code>outsideHeight</code> height value outside the texture extents</li>
+<li><code>terrainCenter</code> world space point where the terrain center is to be placed</li>
+</ul>
+<p>The visible terrain extent from the viewpoint is roughly <code>2*hg * 2^rings</code> terrain cells</p>
               
             </div>
           </div><footer>
