@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Custom shaders - Korender Wiki</title>
+    <title>Terrain - Korender Wiki</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Custom shaders";
-        var mkdocs_page_input_path = "custom.md";
+        var mkdocs_page_name = "Terrain";
+        var mkdocs_page_input_path = "terrain.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -44,7 +44,7 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">User Guide</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../context/">Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../assets/">Asset management</a>
@@ -69,7 +69,9 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../gltf/">GTLF support</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../terrain/">Terrain</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Terrain</a>
+    <ul class="current">
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../gui/">GUI</a>
                   </li>
@@ -94,7 +96,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Custom shaders</li>
+          <li class="breadcrumb-item">User Guide</li>
+      <li class="breadcrumb-item active">Terrain</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -103,10 +106,47 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="custom-shaders">Custom shaders</h1>
+                <h1 id="terrain">Terrain</h1>
+<p>Korender supports optimized rendering of large terrain surfaces by implementing an algorithm based on the idea of <a href="https://developer.nvidia.com/gpugems/gpugems2/part-i-geometric-complexity/chapter-2-terrain-rendering-using-gpu-based-geometry">Geometry Clipmaps</a>.
+This algorithm allows to drastically reduce the number of triangles required to render a large terrain while minimizing visual details loss and LOD transitions.
+Basically, Korender draws the terrain as the series of clipmap rings centered and the viewpoint. Rings represent LOD levels - the more distant the ring is, the coarser triangles its contains.
+Transitions between rings are smoothed using vertex morphing, which eliminates vertex popping during viewport moving.</p>
+<p>To render a terrain, first define terrain <em>prefab</em> in Korender context, then render the prefab in Frame context with <code>terrain</code> material modifier:</p>
+<pre><code class="language-kotlin">Korender {
+    val terrain = clipmapTerrainPrefab(&quot;terrain&quot;, 2.0f, 10, 6)
+    ...
+    Frame {
+        Renderable(
+            base(...),
+            terrain(
+                heightTexture = texture(&quot;terrain/heightmap.png&quot;),
+                heightTextureSize = 1024,
+                heightScale = 200.0f,
+                outsideHeight = 0.0f,
+                terrainCenter = Vec3(0f, 300f, 0f)
+            ),
+            prefab = terrain
+        )
+</code></pre>
+<p>Prefab parameters:
+- <code>id</code> unique identifier
+- <code>cellSize</code> world space size of a terrain cell
+- <code>hg</code> parameter defining ring width: the higher the value, the more geometry details will be preserved while rendering
+- <code>rings</code> number of clipmap rings</p>
+<p>Material modifier parameters:
+- <code>heightTexture</code> heightmap defining height value at terrain point
+- <code>heightTextureSize</code> size of the heightmap in pixels
+- <code>heightScale</code> multiplier to pixel value defined by <code>heightTexture</code> (assuming the pixel value is 0..1)
+- <code>outsideHeight</code> height value outside the texture extents
+- <code>terrainCenter</code> world space point where the terrain center is to be placed</p>
+<p>The visible terrain extent from the viewpoint is roughly 2<em>hg</em>2^rings^ terrain cells</p>
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../gltf/" class="btn btn-neutral float-left" title="GTLF support"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../gui/" class="btn btn-neutral float-right" title="GUI">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -128,6 +168,10 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="../gltf/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../gui/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
