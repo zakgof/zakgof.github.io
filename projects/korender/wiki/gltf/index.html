@@ -81,6 +81,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../deferred/">Deferred renderer</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../offscreen/">Offscreen rendering</a>
+                  </li>
               </ul>
       </div>
     </div>
@@ -106,7 +108,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="plugins">Plugins</h1>
+                <h1 id="gltf">GLTF</h1>
+<p>Korender supports loading and rendering GLTF/GLB files, including meshes, animations, and textured materials.
+To use one, simply call <code>Gltf</code> within a Frame context:</p>
+<pre><code class="language-kotlin">Frame {
+    Gltf(resource = &quot;model.glb&quot;)
+</code></pre>
+<p>It's possibly to select an animation index from the GLTF file (useful when a GLTF embeds multiple animations) and override time used for animating:</p>
+<pre><code class="language-kotlin">Frame {
+    Gltf(resource = &quot;model.glb&quot;, time = ..., animation = ...)
+</code></pre>
+<p>Additionally, instancing is available when a number of model instances needs to be rendered:</p>
+<pre><code class="language-kotlin">Frame {
+    Gltf(
+        resource = &quot;model.glb&quot;,
+        instancing = gltfInstancing(&quot;crowd&quot;, 10, true) {
+            repeat(10) { i -&gt;
+                Instance(
+                    transform = ... // i-th instance dynamic position
+                )
+            }
+        }
+    )
+
+</code></pre>
               
             </div>
           </div><footer>

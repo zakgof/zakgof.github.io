@@ -5,14 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Offscreen rendering and probes - Korender Wiki</title>
+    <title>Offscreen rendering - Korender Wiki</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Offscreen rendering and probes";
+        var mkdocs_page_name = "Offscreen rendering";
         var mkdocs_page_input_path = "offscreen.md";
         var mkdocs_page_url = null;
       </script>
@@ -44,7 +44,7 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">User Guide</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../context/">Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../assets/">Asset management</a>
@@ -79,6 +79,20 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../deferred/">Deferred renderer</a>
                   </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Offscreen rendering</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#render-frame-to-image">Render frame to image</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#render-environment-to-cube-images">Render environment to cube images</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#render-frame-to-texture">Render frame to texture</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#render-environment-to-cube-texture">Render environment to cube texture</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
               </ul>
       </div>
     </div>
@@ -94,7 +108,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Offscreen rendering and probes</li>
+          <li class="breadcrumb-item">User Guide</li>
+      <li class="breadcrumb-item active">Offscreen rendering</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -104,17 +119,64 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="offscreen-rendering-and-probes">Offscreen rendering and probes</h1>
-<h2 id="offscreen">Offscreen</h2>
-<p>Instead of rendering to screen, Korender allows to render a scene to a texture or to a cube map.
-This can be done from <code>Korender</code> context (not from <code>Frame</code> context)</p>
-<h4 id="render-to-texture">Render to texture</h4>
-<h4 id="render-to-cube-map">Render to cube map</h4>
-<h2 id="capturing-probes">Capturing probes</h2>
-<h4 id="capturing-texture-probes">Capturing texture probes</h4>
-<h4 id="capturing-environment-probes">Capturing environment probes</h4>
+<p>Instead of rendering to screen, Korender allows to render a scene to an image/texture or to a cube map.</p>
+<h2 id="render-frame-to-image">Render frame to image</h2>
+<p>Set up a virtual camera and projection and call <code>captureFrame</code> - that will return <code>Deferred&lt;Image&gt;</code> with the captured image: </p>
+<pre><code class="language-kotlin">Korender {
+    val camera = camera(...)
+    val projection = projection(...)
+    val deferredImage = captureFrame(1024, 1024, camera, projection) {
+        Renderable(...)
+    }
+    ...
+    Frame {
+       if (deferredImage.isCompleted) {
+           val capturedImage = deferredImage.getCompleted()
+           // Use the captured image
+
+</code></pre>
+<h2 id="render-environment-to-cube-images">Render environment to cube images</h2>
+<p><code>captureFrame</code> samples the environment at the given world-space position and outputs six images aligned with the standard cubemap face orientations. The function returns a <code>Deferred&lt;CubeTextureImages&gt;</code>:</p>
+<pre><code class="language-kotlin">Korender {
+    val deferredCubeImages = captureEnv(1024, 1f, 1000f) {
+        Renderable(...)
+    }
+    ...
+    Frame {
+       if (deferredCubeImages.isCompleted) {
+           val cubeImages = deferredCubeImages.getCompleted()
+           val negativeXSide = cubeImages[CubeTextureSide.NX]
+           // Use the captured images
+
+</code></pre>
+<h2 id="render-frame-to-texture">Render frame to texture</h2>
+<p>The functions above retrieve image data from the GPU. If you intend to reuse the rendered scene in subsequent rendering passes, it’s more efficient to keep the data on the GPU - in a texture or cube texture - rather than reading it back.
+The following function can be invoked within a Frame context to render the scene directly into a texture:</p>
+<pre><code class="language-kotlin">Frame {
+    CaptureFrame(&quot;capturedFrame&quot;, 256, 256, camera = ..., projection = ...)) {
+        Renderable(...)
+    }
+</code></pre>
+<p>In this example, the scene is rendered into a texture stored in a probe named "capturedFrame". This texture remains on the GPU and can be used in subsequent rendering operations:</p>
+<pre><code class="language-kotlin">Renderable(
+   base(colorTexture = textureProbe(&quot;capturedFrame&quot;), ...
+</code></pre>
+<h4 id="render-environment-to-cube-texture">Render environment to cube texture</h4>
+<p>Similarly, environment can be captured without retrieving from GPU to CPU:</p>
+<pre><code class="language-kotlin">Frame {
+    CaptureEnv(&quot;capturedEnv&quot;, 256, position = ..., near = ..., far = ... ) {
+        Renderable(...)
+    }
+</code></pre>
+<p>In this example, the environment is rendered into a cube texture stored in a cube probe named "capturedEnv". This cube texture remains on the GPU and can be used in subsequent rendering operations:</p>
+<pre><code class="language-kotlin">Sky(cubeTextureProbe(&quot;capturedEnv&quot;))
+</code></pre>
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../deferred/" class="btn btn-neutral float-left" title="Deferred renderer"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
 
   <hr/>
 
@@ -135,6 +197,8 @@ This can be done from <code>Korender</code> context (not from <code>Frame</code>
   <div class="rst-versions" role="note" aria-label="Versions">
   <span class="rst-current-version" data-toggle="rst-current-version">
     
+    
+      <span><a href="../deferred/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
   </span>
